@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Home Page</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        .cta-button {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            color: #ffffff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .cta-button:hover {
+            background-color: #45a049;
+        }
+        .ctb-button{
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            color: #ffffff;
+            background-color: orange;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .ctb-button:hover{
+            background-color: orangered;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bienvenue sur MyBank</h1>
+        <p>Votre Partenaire de confiance pour tous vos besoins bancaires</p>
+        <a href="/users" class="cta-button">Afficher les Utilisateurs</a>
+        <a href="/accounts" class="ctb-button">Afficher les Comptes</a>
+
+    </div>
+</body>
+</html>

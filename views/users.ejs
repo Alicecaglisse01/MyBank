@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Utilisateurs</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .user-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            background-color: #e9e9e9;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .user-item:hover {
+            background-color: #dcdcdc;
+        }
+        .user-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .user-email {
+            color: #666;
+        }
+        .user-creation-ts {
+            color: #999;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll('.user-item').forEach(function(item) {
+                item.addEventListener('click', function() {
+                    window.location.href = '/views/' + item.dataset.userid;
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Liste des Utilisateurs</h1>
+        <ul class="user-list">
+            <% users.forEach(function(user) { %>
+                <li class="user-item" data-userid="<%= user.ID %>">
+                    <div>
+                        <div class="user-name"><%= user.NAME %></div>
+                        <div class="user-email"><%= user.EMAIL %></div>
+                    </div>
+                    <div class="user-creation-ts"><%= new Date(user.CREATION_TS).toLocaleString() %></div>
+                </li>
+            <% }); %>
+        </ul>
+    </div>
+</body>
+</html>

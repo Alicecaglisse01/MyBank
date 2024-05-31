@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmation de Création de Compte</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            max-width: 600px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        h1 {
+            color: #333333;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        p {
+            color: #666666;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            color: #ffffff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Compte Créé</h1>
+        <p>Votre compte <%= accountName %> a bien été créé.</p>
+        <a href="/accounts"><button>Voir tous les comptes</button></a>
+    </div>
+</body>
+</html>
