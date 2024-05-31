@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Liste des Transactions</title>
+    <title>Détails du Compte</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,10 +23,8 @@
             width: 100%;
             box-sizing: border-box;
         }
-        h1 {
+        h1, h2 {
             color: #333333;
-            font-size: 2rem;
-            margin-bottom: 1rem;
             text-align: center;
         }
         table {
@@ -45,10 +43,6 @@
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        tr:hover {
-            background-color: #f1f1f1;
-            cursor: pointer;
-        }
         .positive {
             background-color: #e6ffed;
         }
@@ -60,12 +54,12 @@
             color: #666666;
             margin-top: 2rem;
         }
-        .back-button {
-            margin-top: 1rem;
+        .button-container {
+            margin-top: 2rem;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
         }
-        .back-button button {
+        button {
             padding: 0.75rem 1.5rem;
             font-size: 1rem;
             color: #ffffff;
@@ -75,14 +69,15 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        .back-button button:hover {
+        button:hover {
             background-color: #45a049;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Liste des Transactions</h1>
+        <h1>Détails du Compte : <%= account.NAME %></h1>
+        <h2>Solde : <%= account.AMOUNT %>$</h2>
         <% if (transactions && transactions.length > 0) { %>
             <table>
                 <thead>
@@ -91,18 +86,16 @@
                         <th>Nom</th>
                         <th>Montant</th>
                         <th>Type</th>
-                        <th>ID du Compte</th>
                         <th>Date de Création</th>
                     </tr>
                 </thead>
                 <tbody>
                     <% transactions.forEach(transaction => { %>
-                        <tr class="<%= transaction.TYPE === 1 ? 'positive' : 'negative' %>" onclick="window.location.href='/accounts/<%= transaction.ACCOUNT_ID %>'">
+                        <tr class="<%= transaction.TYPE === 1 ? 'positive' : 'negative' %>">
                             <td><%= transaction.ID %></td>
                             <td><%= transaction.NAME %></td>
                             <td><%= transaction.AMOUNT %></td>
                             <td><%= transaction.TYPE === 1 ? '+' : '-' %></td>
-                            <td><%= transaction.ACCOUNT_ID %></td>
                             <td><%= new Date(transaction.CREATION_TS).toLocaleDateString('fr-FR') %> <%= new Date(transaction.CREATION_TS).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></td>
                         </tr>
                     <% }) %>
@@ -111,7 +104,8 @@
         <% } else { %>
             <p class="no-transactions">Aucune transaction trouvée.</p>
         <% } %>
-        <div class="back-button">
+        <div class="button-container">
+            <button onclick="window.location.href='/accounts/<%= account.ID %>/exports'">Télécharger les transactions en CSV</button>
             <button onclick="window.location.href='/'">Accueil</button>
         </div>
     </div>

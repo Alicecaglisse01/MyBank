@@ -1,6 +1,8 @@
 const path = require("path");
 const express = require("express");
 const oracledb = require("oracledb");
+const fs = require("fs");
+const csvWriter = require("csv-writer").createObjectCsvWriter;
 const app = express();
 
 // Définir EJS comme moteur de vue
@@ -249,6 +251,32 @@ app.get("/views/:userId/:accountId", async (req, res) => {
   }
 });
 
+// Nouvelle route GET "/account/:accountId" pour afficher les détails d'un compte spécifique
+app.get("/accounts/:accountId", async (req, res) => {
+  const { accountId } = req.params;
+  const getAccountSQL = `SELECT * FROM accounts WHERE id = :1`;
+  const getTransactionsSQL = `SELECT * FROM transactions WHERE account_id = :1`;
+
+  try {
+    const [account, transactions] = await Promise.all([
+      connection.execute(getAccountSQL, [accountId]),
+      connection.execute(getTransactionsSQL, [accountId]),
+    ]);
+
+    if (account.rows.length === 0) {
+      return res.status(404).send("Compte non trouvé");
+    }
+
+    res.render("account", {
+      account: account.rows[0],
+      transactions: transactions.rows,
+    });
+  } catch (err) {
+    console.error("Erreur lors de la récupération des détails du compte:", err.message);
+    res.status(500).send("Erreur interne du serveur");
+  }
+});
+
 // Route GET "/accounts" pour renvoyer tous les comptes en JSON
 app.get("/accounts", async (req, res) => {
   try {
@@ -352,6 +380,84 @@ app.post("/transactions", async (req, res) => {
     }
   } catch (err) {
     console.error("Erreur lors de la création de la transaction:", err.message);
+    res.status(500).send("Erreur interne du serveur");
+  }
+});
+
+// Route GET pour télécharger le fichier CSV
+app.get("/accounts/:accountId/exports", async (req, res) => {
+  const { accountId } = req.params;
+  const getTransactionsSQL = `SELECT * FROM transactions WHERE account_id = :1`;
+  
+  try {
+    const result = await connection.execute(getTransactionsSQL, [accountId]);
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).send("Aucune transaction trouvée pour ce compte");
+    }
+
+    const csvFilePath = path.join(__dirname, `exports-account-${accountId}.csv`);
+    const csvWriterInstance = csvWriter({
+      path: csvFilePath,
+      header: [
+        { id: 'ID', title: 'ID' },
+        { id: 'NAME', title: 'Nom' },
+        { id: 'AMOUNT', title: 'Montant' },
+        { id: 'TYPE', title: 'Type' },
+        { id: 'ACCOUNT_ID', title: 'ID du Compte' },
+        { id: 'CREATION_TS', title: 'Date de Création' }
+      ]
+    });
+
+    await csvWriterInstance.writeRecords(result.rows);
+
+    res.download(csvFilePath, `exports-account-${accountId}.csv`, (err) => {
+      if (err) {
+        console.error("Erreur lors du téléchargement du fichier CSV:", err.message);
+        res.status(500).send("Erreur interne du serveur");
+      }
+      fs.unlink(csvFilePath, (err) => {
+        if (err) {
+          console.error("Erreur lors de la suppression du fichier CSV:", err.message);
+        }
+      });
+    });
+  } catch (err) {
+    console.error("Erreur lors de l'export des transactions:", err.message);
+    res.status(500).send("Erreur interne du serveur");
+  }
+});
+
+// Route POST pour créer le fichier CSV
+app.post("/accounts/:accountId/exports", async (req, res) => {
+  const { accountId } = req.params;
+  const getTransactionsSQL = `SELECT * FROM transactions WHERE account_id = :1`;
+
+  try {
+    const result = await connection.execute(getTransactionsSQL, [accountId]);
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).send("Aucune transaction trouvée pour ce compte");
+    }
+
+    const csvFilePath = path.join(__dirname, `exports-account-${accountId}.csv`);
+    const csvWriterInstance = csvWriter({
+      path: csvFilePath,
+      header: [
+        { id: 'ID', title: 'ID' },
+        { id: 'NAME', title: 'Nom' },
+        { id: 'AMOUNT', title: 'Montant' },
+        { id: 'TYPE', title: 'Type' },
+        { id: 'ACCOUNT_ID', title: 'ID du Compte' },
+        { id: 'CREATION_TS', title: 'Date de Création' }
+      ]
+    });
+
+    await csvWriterInstance.writeRecords(result.rows);
+
+    res.status(200).send(`Fichier CSV créé avec succès : exports-account-${accountId}.csv`);
+  } catch (err) {
+    console.error("Erreur lors de la création du fichier CSV:", err.message);
     res.status(500).send("Erreur interne du serveur");
   }
 });
