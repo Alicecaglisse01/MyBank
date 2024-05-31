@@ -119,6 +119,17 @@ async function setupDatabase() {
     END;`
   );
 
+  // Créer ou remplacer la fonction pour formater le nom de la transaction
+  await connection.execute(
+    `CREATE OR REPLACE FUNCTION format_transaction_name (
+        p_name IN VARCHAR2,
+        p_type IN NUMBER
+    ) RETURN VARCHAR2 AS
+    BEGIN
+        RETURN 'T' || p_type || '-' || UPPER(p_name);
+    END;`
+  );
+
   // Créer ou remplacer la procédure pour insérer une transaction
   await connection.execute(
     `CREATE OR REPLACE PROCEDURE insert_transaction (
@@ -130,7 +141,7 @@ async function setupDatabase() {
     ) AS
     BEGIN
         INSERT INTO transactions (name, amount, type, account_id)
-        VALUES (p_trans_name, p_amount, p_type, p_account_id)
+        VALUES (format_transaction_name(p_trans_name, p_type), p_amount, p_type, p_account_id)
         RETURNING id INTO p_trans_id;
 
         UPDATE accounts
@@ -209,6 +220,35 @@ app.get("/views/:userId", async (req, res) => {
   });
 });
 
+// Nouvelle route GET "/views/:userId/:accountId" pour afficher les transactions d'un compte spécifique
+app.get("/views/:userId/:accountId", async (req, res) => {
+  const { userId, accountId } = req.params;
+  const getTransactionsSQL = `SELECT * FROM transactions WHERE account_id = :1`;
+  const getAccountSQL = `SELECT * FROM accounts WHERE id = :1 AND user_id = :2`;
+  const getUserSQL = `SELECT * FROM users WHERE id = :1`;
+
+  try {
+    const [transactions, account, user] = await Promise.all([
+      connection.execute(getTransactionsSQL, [accountId]),
+      connection.execute(getAccountSQL, [accountId, userId]),
+      connection.execute(getUserSQL, [userId])
+    ]);
+
+    if (account.rows.length === 0) {
+      return res.status(404).send("Compte non trouvé");
+    }
+
+    res.render("transactions", {
+      transactions: transactions.rows,
+      account: account.rows[0],
+      user: user.rows[0]
+    });
+  } catch (err) {
+    console.error("Erreur lors de la récupération des transactions du compte:", err.message);
+    res.status(500).send("Erreur interne du serveur");
+  }
+});
+
 // Route GET "/accounts" pour renvoyer tous les comptes en JSON
 app.get("/accounts", async (req, res) => {
   try {
@@ -284,7 +324,6 @@ app.get("/transactions", async (req, res) => {
   }
 });
 
-
 // Route POST "/transactions" pour créer de nouvelles transactions
 app.post("/transactions", async (req, res) => {
   try {
@@ -316,7 +355,6 @@ app.post("/transactions", async (req, res) => {
     res.status(500).send("Erreur interne du serveur");
   }
 });
-
 
 // Connecter à la base de données puis démarrer le serveur
 connectToDatabase()
