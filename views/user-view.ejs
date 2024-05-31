@@ -63,7 +63,7 @@
             margin-bottom: 0.5rem;
             color: #333333;
         }
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 0.5rem;
             border: 1px solid #cccccc;
@@ -99,7 +99,7 @@
         <% } else { %>
             <h1>Utilisateur ou comptes introuvables</h1>
         <% } %>
-        
+
         <div class="form-container">
             <h2>Ajouter un nouveau Compte</h2>
             <form action="/accounts" method="POST">
@@ -113,6 +113,37 @@
                     <input type="number" id="amount" name="amount" required>
                 </div>
                 <button type="submit">Créer le Compte</button>
+            </form>
+        </div>
+
+        <div class="form-container">
+            <h2>Ajouter une Transaction</h2>
+            <form action="/transactions" method="POST">
+                <input type="hidden" name="user_id" value="<%= currentUser.ID %>">
+                <div class="form-group">
+                    <label for="account">Compte :</label>
+                    <select name="account_id" id="account">
+                        <% accounts.forEach(account => { %>
+                            <option value="<%= account.ID %>"><%= account.NAME %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="trans_name">Nom de la Transaction :</label>
+                    <input type="text" id="trans_name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="trans_amount">Montant :</label>
+                    <input type="number" id="trans_amount" name="amount" required>
+                </div>
+                <div class="form-group">
+                    <label for="type">Type :</label>
+                    <select name="type" id="type">
+                        <option value="1">In</option>
+                        <option value="0">Out</option>
+                    </select>
+                </div>
+                <button type="submit">Ajouter la Transaction</button>
             </form>
         </div>
     </div>

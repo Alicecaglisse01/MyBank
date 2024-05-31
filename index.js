@@ -39,6 +39,7 @@ async function setupDatabase() {
     `BEGIN
     execute immediate 'drop table users CASCADE CONSTRAINTS';
     execute immediate 'drop table accounts CASCADE CONSTRAINTS';
+    execute immediate 'drop table transactions CASCADE CONSTRAINTS';
     exception when others then if sqlcode <> -942 then raise; end if;
     END;`
   );
@@ -64,6 +65,22 @@ async function setupDatabase() {
       CONSTRAINT fk_user
         FOREIGN KEY (user_id)
         REFERENCES users(id),
+      transactions number default 0,
+      creation_ts timestamp with time zone default current_timestamp,
+      primary key (id)
+    )`
+  );
+
+  await connection.execute(
+    `create table transactions (
+      id number generated always as identity,
+      name varchar2(256),
+      amount number,
+      type number, -- 0: Out, 1: In
+      account_id number,
+      CONSTRAINT fk_account
+        FOREIGN KEY (account_id)
+        REFERENCES accounts(id),
       creation_ts timestamp with time zone default current_timestamp,
       primary key (id)
     )`
@@ -99,6 +116,27 @@ async function setupDatabase() {
         UPDATE users
         SET accounts = accounts + 1
         WHERE id = p_user_id;
+    END;`
+  );
+
+  // Créer ou remplacer la procédure pour insérer une transaction
+  await connection.execute(
+    `CREATE OR REPLACE PROCEDURE insert_transaction (
+        p_trans_name IN transactions.name%TYPE,
+        p_amount IN transactions.amount%TYPE,
+        p_type IN transactions.type%TYPE,
+        p_account_id IN transactions.account_id%TYPE,
+        p_trans_id OUT transactions.id%TYPE
+    ) AS
+    BEGIN
+        INSERT INTO transactions (name, amount, type, account_id)
+        VALUES (p_trans_name, p_amount, p_type, p_account_id)
+        RETURNING id INTO p_trans_id;
+
+        UPDATE accounts
+        SET amount = amount + (CASE WHEN p_type = 1 THEN p_amount ELSE -p_amount END),
+            transactions = transactions + 1
+        WHERE id = p_account_id;
     END;`
   );
 
@@ -226,6 +264,59 @@ app.post("/accounts", async (req, res) => {
     res.status(500).send("Erreur interne du serveur");
   }
 });
+
+// Route GET "/transactions" pour afficher toutes les transactions
+app.get("/transactions", async (req, res) => {
+  try {
+    const getTransactionsSQL = `select * from transactions`;
+    const result = await connection.execute(getTransactionsSQL);
+
+    if (!result) {
+      throw new Error("Failed to retrieve transactions");
+    }
+
+    res.render("transactions", {
+      transactions: result.rows
+    });
+  } catch (err) {
+    console.error("Erreur lors de la récupération des transactions:", err.message);
+    res.status(500).send("Erreur interne du serveur");
+  }
+});
+
+
+// Route POST "/transactions" pour créer de nouvelles transactions
+app.post("/transactions", async (req, res) => {
+  try {
+    console.log("Tentative de création de la transaction avec les données : ", req.body);
+
+    const createTransactionSQL = `BEGIN
+                insert_transaction(:name, :amount, :type, :account_id, :trans_id);
+              END;`;
+    const result = await connection.execute(createTransactionSQL, {
+      name: req.body.name,
+      amount: req.body.amount,
+      type: req.body.type,
+      account_id: req.body.account_id,
+      trans_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
+    });
+
+    console.log("Résultat de l'insertion de la transaction : ", result);
+
+    if (result && result.outBinds && result.outBinds.trans_id) {
+      console.log("Transaction créée avec succès, ID de la transaction : ", result.outBinds.trans_id[0]);
+      await connection.commit(); // Engage la transaction
+      res.redirect(`/views/${req.body.user_id}`);
+    } else {
+      console.log("Erreur lors de la création de la transaction, aucune ligne affectée");
+      res.status(500).send("Erreur lors de la création de la transaction");
+    }
+  } catch (err) {
+    console.error("Erreur lors de la création de la transaction:", err.message);
+    res.status(500).send("Erreur interne du serveur");
+  }
+});
+
 
 // Connecter à la base de données puis démarrer le serveur
 connectToDatabase()

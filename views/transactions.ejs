@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des Transactions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            max-width: 800px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #333333;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #dddddd;
+        }
+        th {
+            background-color: #f4f4f9;
+        }
+        
+        .positive {
+            background-color: #e6ffed;
+        }
+        .negative {
+            background-color: #ffe6e6;
+        }
+        .no-transactions {
+            text-align: center;
+            color: #666666;
+            margin-top: 2rem;
+        }
+        .back-button {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+        }
+        .back-button button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            color: #ffffff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .back-button button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Liste des Transactions</h1>
+        <% if (transactions && transactions.length > 0) { %>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom</th>
+                        <th>Montant</th>
+                        <th>Type</th>
+                        <th>ID du Compte</th>
+                        <th>Date de Création</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% transactions.forEach(transaction => { %>
+                        <tr class="<%= transaction.TYPE === 1 ? 'positive' : 'negative' %>">
+                            <td><%= transaction.ID %></td>
+                            <td><%= transaction.NAME %></td>
+                            <td><%= transaction.AMOUNT %></td>
+                            <td><%= transaction.TYPE === 1 ? '+' : '-' %></td>
+                            <td><%= transaction.ACCOUNT_ID %></td>
+                            <td><%= new Date(transaction.CREATION_TS).toLocaleDateString('fr-FR') %> <%= new Date(transaction.CREATION_TS).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        <% } else { %>
+            <p class="no-transactions">Aucune transaction trouvée.</p>
+        <% } %>
+        <div class="back-button">
+            <button onclick="window.location.href='/'">Accueil</button>
+        </div>
+    </div>
+</body>
+</html>

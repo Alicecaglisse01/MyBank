@@ -58,6 +58,24 @@
         .user-creation-ts {
             color: #999;
         }
+        .back-button {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+        }
+        .back-button button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            color: #ffffff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .back-button button:hover {
+            background-color: #45a049;
+        }
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -83,6 +101,9 @@
                 </li>
             <% }); %>
         </ul>
+        <div class="back-button">
+            <button onclick="window.location.href='/'">Accueil</button>
+        </div>
     </div>
 </body>
 </html>
