@@ -50,7 +50,7 @@ async function setupDatabase() {
       name varchar2(256),
       email varchar2(512),
       creation_ts timestamp with time zone default current_timestamp,
-      accounts number,
+      accounts number default 0,
       primary key (id)
     )`
   );
@@ -95,12 +95,11 @@ async function setupDatabase() {
         INSERT INTO accounts (name, amount, user_id)
         VALUES (p_account_name, p_amount, p_user_id)
         RETURNING id INTO p_account_id;
-        
+
         UPDATE users
         SET accounts = accounts + 1
         WHERE id = p_user_id;
-    END;
-    /`
+    END;`
   );
 
   // Insert some data
@@ -200,10 +199,7 @@ app.get("/accounts", async (req, res) => {
 // Route POST "/accounts" pour créer de nouveaux comptes
 app.post("/accounts", async (req, res) => {
   try {
-    console.log(
-      "Tentative de création du compte avec les données : ",
-      req.body
-    );
+    console.log("Tentative de création du compte avec les données : ", req.body);
 
     const createAccountSQL = `BEGIN
                 insert_account(:name, :amount, :user_id, :account_id);
@@ -218,16 +214,11 @@ app.post("/accounts", async (req, res) => {
     console.log("Résultat de l'insertion du compte : ", result);
 
     if (result && result.outBinds && result.outBinds.account_id) {
-      console.log(
-        "Compte créé avec succès, ID du compte : ",
-        result.outBinds.account_id[0]
-      );
+      console.log("Compte créé avec succès, ID du compte : ", result.outBinds.account_id[0]);
       await connection.commit(); // Engage la transaction
       res.redirect(`/accounts`);
     } else {
-      console.log(
-        "Erreur lors de la création du compte, aucune ligne affectée"
-      );
+      console.log("Erreur lors de la création du compte, aucune ligne affectée");
       res.status(500).send("Erreur lors de la création du compte");
     }
   } catch (err) {
