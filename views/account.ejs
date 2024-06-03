@@ -72,6 +72,15 @@
         button:hover {
             background-color: #45a049;
         }
+        .form-container {
+            margin-top: 1rem;
+        }
+        .form-container form {
+            display: inline-block;
+        }
+        .form-container input, .form-container select, .form-container button {
+            margin: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -87,6 +96,7 @@
                         <th>Montant</th>
                         <th>Type</th>
                         <th>Date de Création</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,6 +107,25 @@
                             <td><%= transaction.AMOUNT %></td>
                             <td><%= transaction.TYPE === 1 ? '+' : '-' %></td>
                             <td><%= new Date(transaction.CREATION_TS).toLocaleDateString('fr-FR') %> <%= new Date(transaction.CREATION_TS).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></td>
+                            <td>
+                                <div class="form-container">
+                                    <!-- Form for updating the transaction -->
+                                    <form action="/transactions/<%= transaction.ID %>?_method=PUT" method="post">
+                                        <input type="hidden" name="account_id" value="<%= account.ID %>">
+                                        <input type="text" name="name" value="<%= transaction.NAME %>" required>
+                                        <input type="number" name="amount" value="<%= transaction.AMOUNT %>" required>
+                                        <select name="type">
+                                            <option value="1" <%= transaction.TYPE === 1 ? "selected" : "" %>>In</option>
+                                            <option value="0" <%= transaction.TYPE === 0 ? "selected" : "" %>>Out</option>
+                                        </select>
+                                        <button type="submit">Update</button>
+                                    </form>
+                                    <!-- Form for deleting the transaction -->
+                                    <form action="/transactions/<%= transaction.ID %>?_method=DELETE" method="post">
+                                        <button type="submit">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     <% }) %>
                 </tbody>

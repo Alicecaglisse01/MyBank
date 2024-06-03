@@ -3,6 +3,7 @@ const express = require("express");
 const oracledb = require("oracledb");
 const fs = require("fs");
 const csvWriter = require("csv-writer").createObjectCsvWriter;
+const methodOverride = require('method-override'); // Ajouter cette ligne
 const app = express();
 
 // Définir EJS comme moteur de vue
@@ -13,6 +14,9 @@ app.set("views", path.join(__dirname, "views"));
 
 // Optionnel : définir un répertoire pour les fichiers statiques (CSS, JS, images, etc.)
 app.use(express.static(path.join(__dirname, "public")));
+
+// Middleware pour gérer les méthodes PUT et DELETE
+app.use(methodOverride('_method')); // Ajouter cette ligne
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Middleware pour gérer les données des formulaires
@@ -153,11 +157,37 @@ async function setupDatabase() {
     END;`
   );
 
+  // Créer le trigger pour mettre à jour le montant du compte
+  await connection.execute(`
+    CREATE OR REPLACE TRIGGER trg_update_account_balance
+    AFTER INSERT OR UPDATE OR DELETE ON transactions
+    FOR EACH ROW
+    DECLARE
+      v_amount_change NUMBER;
+    BEGIN
+      -- Déterminer le changement de montant en fonction de l'opération
+      IF INSERTING THEN
+        v_amount_change := :NEW.amount * CASE WHEN :NEW.type = 1 THEN 1 ELSE -1 END;
+      ELSIF UPDATING THEN
+        v_amount_change := (:NEW.amount - :OLD.amount) * CASE WHEN :NEW.type = 1 THEN 1 ELSE -1 END;
+      ELSIF DELETING THEN
+        v_amount_change := :OLD.amount * CASE WHEN :OLD.type = 1 THEN -1 ELSE 1 END;
+      END IF;
+
+      -- Mettre à jour le montant du compte
+      UPDATE accounts
+      SET amount = amount + v_amount_change
+      WHERE id = :NEW.account_id;
+    END;
+  `);
+
   // Insert some data
   const usersSql = `insert into users (name, email, accounts) values(:1, :2, :3)`;
   const usersRows = [
-    ["Valentin Montagne", "contact@vm-it-consulting.com", 0],
-    ["Amélie Dal", "amelie.dal@gmail.com", 0],
+    ["Valentin Montagne", "contact@vm-it-consulting.com", 2],
+    ["Amélie Dal", "amelie.dal@gmail.com", 1],
+    ["John Doe", "john.doe@example.com", 1],
+    ["Jane Smith", "jane.smith@example.com", 0],
   ];
   let usersResult = await connection.executeMany(usersSql, usersRows);
   console.log(usersResult.rowsAffected, "Users rows inserted");
@@ -167,9 +197,20 @@ async function setupDatabase() {
     ["Compte courant", 2000, 1],
     ["Livret A", 13000, 1],
     ["Compte courant", 2500, 2],
+    ["Compte épargne", 5000, 3],
   ];
   let accountsResult = await connection.executeMany(accountsSql, accountsRows);
   console.log(accountsResult.rowsAffected, "Accounts rows inserted");
+
+  const transactionsSql = `insert into transactions (name, amount, type, account_id) values(:1, :2, :3, :4)`;
+  const transactionsRows = [
+    ["Salaire", 1500, 1, 1],
+    ["Achat", -500, 0, 1],
+    ["Achat", -2000, 0, 2],
+    ["Dépôt", 3000, 1, 3],
+  ];
+  let transactionsResult = await connection.executeMany(transactionsSql, transactionsRows);
+  console.log(transactionsResult.rowsAffected, "Transactions rows inserted");
 
   connection.commit(); // Now query the rows back
 }
@@ -384,6 +425,64 @@ app.post("/transactions", async (req, res) => {
   }
 });
 
+// Route PUT "/transactions/:id" pour mettre à jour une transaction existante
+app.put("/transactions/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, amount, type, account_id } = req.body;
+
+  if (!name || !amount || !type || !account_id) {
+    return res.status(400).send("Tous les champs sont requis");
+  }
+
+  try {
+    const updateTransactionSQL = `
+      UPDATE transactions
+      SET name = :name, amount = :amount, type = :type, account_id = :account_id
+      WHERE id = :id
+    `;
+    const result = await connection.execute(updateTransactionSQL, {
+      name,
+      amount,
+      type,
+      account_id,
+      id
+    });
+
+    if (result.rowsAffected && result.rowsAffected === 1) {
+      await connection.commit();
+      res.status(200).send("Transaction mise à jour avec succès");
+    } else {
+      res.status(404).send("Transaction non trouvée");
+    }
+  } catch (err) {
+    console.error("Erreur lors de la mise à jour de la transaction:", err.message);
+    res.status(500).send("Erreur interne du serveur");
+  }
+});
+
+// Route DELETE "/transactions/:id" pour supprimer une transaction existante
+app.delete("/transactions/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deleteTransactionSQL = `
+      DELETE FROM transactions
+      WHERE id = :id
+    `;
+    const result = await connection.execute(deleteTransactionSQL, { id });
+
+    if (result.rowsAffected && result.rowsAffected === 1) {
+      await connection.commit();
+      res.status(200).send("Transaction supprimée avec succès");
+    } else {
+      res.status(404).send("Transaction non trouvée");
+    }
+  } catch (err) {
+    console.error("Erreur lors de la suppression de la transaction:", err.message);
+    res.status(500).send("Erreur interne du serveur");
+  }
+});
+
 // Route GET pour télécharger le fichier CSV
 app.get("/accounts/:accountId/exports", async (req, res) => {
   const { accountId } = req.params;
@@ -458,6 +557,37 @@ app.post("/accounts/:accountId/exports", async (req, res) => {
     res.status(200).send(`Fichier CSV créé avec succès : exports-account-${accountId}.csv`);
   } catch (err) {
     console.error("Erreur lors de la création du fichier CSV:", err.message);
+    res.status(500).send("Erreur interne du serveur");
+  }
+});
+
+app.get("/accounts/:accountId/budgets/:amount", async (req, res) => {
+  const { accountId, amount } = req.params;
+
+  try {
+    const getTransactionsSQL = `SELECT * FROM transactions WHERE account_id = :1 ORDER BY creation_ts ASC`;
+    const result = await connection.execute(getTransactionsSQL, [accountId]);
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).send("Aucune transaction trouvée pour ce compte");
+    }
+
+    let total = 0;
+    let transactionsWithinBudget = [];
+
+    for (const transaction of result.rows) {
+      if (total + transaction.AMOUNT > amount) break;
+      total += transaction.AMOUNT;
+      transactionsWithinBudget.push(transaction);
+    }
+
+    res.render("budget", {
+      accountId,
+      budget: amount,
+      transactions: transactionsWithinBudget
+    });
+  } catch (err) {
+    console.error("Erreur lors de la récupération des transactions:", err.message);
     res.status(500).send("Erreur interne du serveur");
   }
 });
