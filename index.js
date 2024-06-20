@@ -3,7 +3,7 @@ const express = require("express");
 const oracledb = require("oracledb");
 const fs = require("fs");
 const csvWriter = require("csv-writer").createObjectCsvWriter;
-const methodOverride = require('method-override'); // Ajouter cette ligne
+const methodOverride = require("method-override"); // Ajouter cette ligne
 const app = express();
 
 // Définir EJS comme moteur de vue
@@ -16,7 +16,7 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Middleware pour gérer les méthodes PUT et DELETE
-app.use(methodOverride('_method')); // Ajouter cette ligne
+app.use(methodOverride("_method")); // Ajouter cette ligne
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Middleware pour gérer les données des formulaires
@@ -31,7 +31,7 @@ async function connectToDatabase() {
     connection = await oracledb.getConnection({
       user: "admin",
       password: "password",
-      connectionString: "0.0.0.0:1521/XEPDB1",
+      connectionString: "0.0.0.0:1522/XEPDB1",
     });
     console.log("Successfully connected to Oracle Database");
   } catch (err) {
@@ -209,7 +209,10 @@ async function setupDatabase() {
     ["Achat", -2000, 0, 2],
     ["Dépôt", 3000, 1, 3],
   ];
-  let transactionsResult = await connection.executeMany(transactionsSql, transactionsRows);
+  let transactionsResult = await connection.executeMany(
+    transactionsSql,
+    transactionsRows
+  );
   console.log(transactionsResult.rowsAffected, "Transactions rows inserted");
 
   connection.commit(); // Now query the rows back
@@ -274,7 +277,7 @@ app.get("/views/:userId/:accountId", async (req, res) => {
     const [transactions, account, user] = await Promise.all([
       connection.execute(getTransactionsSQL, [accountId]),
       connection.execute(getAccountSQL, [accountId, userId]),
-      connection.execute(getUserSQL, [userId])
+      connection.execute(getUserSQL, [userId]),
     ]);
 
     if (account.rows.length === 0) {
@@ -284,10 +287,13 @@ app.get("/views/:userId/:accountId", async (req, res) => {
     res.render("transactions", {
       transactions: transactions.rows,
       account: account.rows[0],
-      user: user.rows[0]
+      user: user.rows[0],
     });
   } catch (err) {
-    console.error("Erreur lors de la récupération des transactions du compte:", err.message);
+    console.error(
+      "Erreur lors de la récupération des transactions du compte:",
+      err.message
+    );
     res.status(500).send("Erreur interne du serveur");
   }
 });
@@ -313,7 +319,10 @@ app.get("/accounts/:accountId", async (req, res) => {
       transactions: transactions.rows,
     });
   } catch (err) {
-    console.error("Erreur lors de la récupération des détails du compte:", err.message);
+    console.error(
+      "Erreur lors de la récupération des détails du compte:",
+      err.message
+    );
     res.status(500).send("Erreur interne du serveur");
   }
 });
@@ -346,7 +355,10 @@ app.get("/accounts", async (req, res) => {
 // Route POST "/accounts" pour créer de nouveaux comptes
 app.post("/accounts", async (req, res) => {
   try {
-    console.log("Tentative de création du compte avec les données : ", req.body);
+    console.log(
+      "Tentative de création du compte avec les données : ",
+      req.body
+    );
 
     const createAccountSQL = `BEGIN
                 insert_account(:name, :amount, :user_id, :account_id);
@@ -361,11 +373,16 @@ app.post("/accounts", async (req, res) => {
     console.log("Résultat de l'insertion du compte : ", result);
 
     if (result && result.outBinds && result.outBinds.account_id) {
-      console.log("Compte créé avec succès, ID du compte : ", result.outBinds.account_id[0]);
+      console.log(
+        "Compte créé avec succès, ID du compte : ",
+        result.outBinds.account_id[0]
+      );
       await connection.commit(); // Engage la transaction
       res.redirect(`/accounts`);
     } else {
-      console.log("Erreur lors de la création du compte, aucune ligne affectée");
+      console.log(
+        "Erreur lors de la création du compte, aucune ligne affectée"
+      );
       res.status(500).send("Erreur lors de la création du compte");
     }
   } catch (err) {
@@ -385,10 +402,13 @@ app.get("/transactions", async (req, res) => {
     }
 
     res.render("transactions", {
-      transactions: result.rows
+      transactions: result.rows,
     });
   } catch (err) {
-    console.error("Erreur lors de la récupération des transactions:", err.message);
+    console.error(
+      "Erreur lors de la récupération des transactions:",
+      err.message
+    );
     res.status(500).send("Erreur interne du serveur");
   }
 });
@@ -396,7 +416,10 @@ app.get("/transactions", async (req, res) => {
 // Route POST "/transactions" pour créer de nouvelles transactions
 app.post("/transactions", async (req, res) => {
   try {
-    console.log("Tentative de création de la transaction avec les données : ", req.body);
+    console.log(
+      "Tentative de création de la transaction avec les données : ",
+      req.body
+    );
 
     const createTransactionSQL = `BEGIN
                 insert_transaction(:name, :amount, :type, :account_id, :trans_id);
@@ -412,11 +435,16 @@ app.post("/transactions", async (req, res) => {
     console.log("Résultat de l'insertion de la transaction : ", result);
 
     if (result && result.outBinds && result.outBinds.trans_id) {
-      console.log("Transaction créée avec succès, ID de la transaction : ", result.outBinds.trans_id[0]);
+      console.log(
+        "Transaction créée avec succès, ID de la transaction : ",
+        result.outBinds.trans_id[0]
+      );
       await connection.commit(); // Engage la transaction
       res.redirect(`/views/${req.body.user_id}`);
     } else {
-      console.log("Erreur lors de la création de la transaction, aucune ligne affectée");
+      console.log(
+        "Erreur lors de la création de la transaction, aucune ligne affectée"
+      );
       res.status(500).send("Erreur lors de la création de la transaction");
     }
   } catch (err) {
@@ -445,7 +473,7 @@ app.put("/transactions/:id", async (req, res) => {
       amount,
       type,
       account_id,
-      id
+      id,
     });
 
     if (result.rowsAffected && result.rowsAffected === 1) {
@@ -455,7 +483,10 @@ app.put("/transactions/:id", async (req, res) => {
       res.status(404).send("Transaction non trouvée");
     }
   } catch (err) {
-    console.error("Erreur lors de la mise à jour de la transaction:", err.message);
+    console.error(
+      "Erreur lors de la mise à jour de la transaction:",
+      err.message
+    );
     res.status(500).send("Erreur interne du serveur");
   }
 });
@@ -478,7 +509,10 @@ app.delete("/transactions/:id", async (req, res) => {
       res.status(404).send("Transaction non trouvée");
     }
   } catch (err) {
-    console.error("Erreur lors de la suppression de la transaction:", err.message);
+    console.error(
+      "Erreur lors de la suppression de la transaction:",
+      err.message
+    );
     res.status(500).send("Erreur interne du serveur");
   }
 });
@@ -487,7 +521,7 @@ app.delete("/transactions/:id", async (req, res) => {
 app.get("/accounts/:accountId/exports", async (req, res) => {
   const { accountId } = req.params;
   const getTransactionsSQL = `SELECT * FROM transactions WHERE account_id = :1`;
-  
+
   try {
     const result = await connection.execute(getTransactionsSQL, [accountId]);
 
@@ -495,29 +529,38 @@ app.get("/accounts/:accountId/exports", async (req, res) => {
       return res.status(404).send("Aucune transaction trouvée pour ce compte");
     }
 
-    const csvFilePath = path.join(__dirname, `exports-account-${accountId}.csv`);
+    const csvFilePath = path.join(
+      __dirname,
+      `exports-account-${accountId}.csv`
+    );
     const csvWriterInstance = csvWriter({
       path: csvFilePath,
       header: [
-        { id: 'ID', title: 'ID' },
-        { id: 'NAME', title: 'Nom' },
-        { id: 'AMOUNT', title: 'Montant' },
-        { id: 'TYPE', title: 'Type' },
-        { id: 'ACCOUNT_ID', title: 'ID du Compte' },
-        { id: 'CREATION_TS', title: 'Date de Création' }
-      ]
+        { id: "ID", title: "ID" },
+        { id: "NAME", title: "Nom" },
+        { id: "AMOUNT", title: "Montant" },
+        { id: "TYPE", title: "Type" },
+        { id: "ACCOUNT_ID", title: "ID du Compte" },
+        { id: "CREATION_TS", title: "Date de Création" },
+      ],
     });
 
     await csvWriterInstance.writeRecords(result.rows);
 
     res.download(csvFilePath, `exports-account-${accountId}.csv`, (err) => {
       if (err) {
-        console.error("Erreur lors du téléchargement du fichier CSV:", err.message);
+        console.error(
+          "Erreur lors du téléchargement du fichier CSV:",
+          err.message
+        );
         res.status(500).send("Erreur interne du serveur");
       }
       fs.unlink(csvFilePath, (err) => {
         if (err) {
-          console.error("Erreur lors de la suppression du fichier CSV:", err.message);
+          console.error(
+            "Erreur lors de la suppression du fichier CSV:",
+            err.message
+          );
         }
       });
     });
@@ -539,22 +582,27 @@ app.post("/accounts/:accountId/exports", async (req, res) => {
       return res.status(404).send("Aucune transaction trouvée pour ce compte");
     }
 
-    const csvFilePath = path.join(__dirname, `exports-account-${accountId}.csv`);
+    const csvFilePath = path.join(
+      __dirname,
+      `exports-account-${accountId}.csv`
+    );
     const csvWriterInstance = csvWriter({
       path: csvFilePath,
       header: [
-        { id: 'ID', title: 'ID' },
-        { id: 'NAME', title: 'Nom' },
-        { id: 'AMOUNT', title: 'Montant' },
-        { id: 'TYPE', title: 'Type' },
-        { id: 'ACCOUNT_ID', title: 'ID du Compte' },
-        { id: 'CREATION_TS', title: 'Date de Création' }
-      ]
+        { id: "ID", title: "ID" },
+        { id: "NAME", title: "Nom" },
+        { id: "AMOUNT", title: "Montant" },
+        { id: "TYPE", title: "Type" },
+        { id: "ACCOUNT_ID", title: "ID du Compte" },
+        { id: "CREATION_TS", title: "Date de Création" },
+      ],
     });
 
     await csvWriterInstance.writeRecords(result.rows);
 
-    res.status(200).send(`Fichier CSV créé avec succès : exports-account-${accountId}.csv`);
+    res
+      .status(200)
+      .send(`Fichier CSV créé avec succès : exports-account-${accountId}.csv`);
   } catch (err) {
     console.error("Erreur lors de la création du fichier CSV:", err.message);
     res.status(500).send("Erreur interne du serveur");
@@ -584,10 +632,13 @@ app.get("/accounts/:accountId/budgets/:amount", async (req, res) => {
     res.render("budget", {
       accountId,
       budget: amount,
-      transactions: transactionsWithinBudget
+      transactions: transactionsWithinBudget,
     });
   } catch (err) {
-    console.error("Erreur lors de la récupération des transactions:", err.message);
+    console.error(
+      "Erreur lors de la récupération des transactions:",
+      err.message
+    );
     res.status(500).send("Erreur interne du serveur");
   }
 });

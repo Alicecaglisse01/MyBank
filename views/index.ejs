@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,84 +7,98 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f0f2f5;
+            background-color: #e0e7ff; /* Changement de couleur de fond */
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            overflow: hidden; /* Pour empêcher les barres de défilement pendant l'animation */
         }
         .container {
             text-align: center;
             background-color: #ffffff;
             padding: 2rem;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Augmentation de l'ombre */
+            transition: transform 0.3s ease; /* Ajout d'une transition pour l'effet de survol */
+        }
+        .container:hover {
+            transform: translateY(-10px); /* Effet de survol */
         }
         h1 {
-            color: #333;
-            font-size: 2.5rem;
+            color: #1f2937; /* Couleur de texte plus foncée */
+            font-size: 3rem; /* Agrandissement de la police */
             margin-bottom: 1rem;
         }
         p {
             font-size: 1.2rem;
-            color: #666;
+            color: #4b5563; /* Couleur de texte plus douce */
         }
-        .cta-button {
+        .button {
             display: inline-block;
-            margin-top: 2rem;
+            margin: 1rem;
             padding: 0.75rem 1.5rem;
             font-size: 1rem;
             color: #ffffff;
-            background-color: #4CAF50;
             border: none;
             border-radius: 5px;
             text-decoration: none;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease; 
+        }
+        .button:hover {
+            transform: translateY(-5px); 
+        }
+        .cta-button {
+            background-color: #4CAF50;
         }
         .cta-button:hover {
             background-color: #45a049;
         }
-        .ctb-button{
-            display: inline-block;
-            margin-top: 2rem;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            color: #ffffff;
-            background-color: orange;
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            transition: background-color 0.3s ease;
+        .ctb-button {
+            background-color: #FFA500;
         }
-        .ctb-button:hover{
-            background-color: orangered;
+        .ctb-button:hover {
+            background-color: #FF4500;
         }
         .ctc-button {
-            display: inline-block;
-            margin-top: 2rem;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            color: #ffffff;
-            background-color: rgb(153, 80, 80);
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            transition: background-color 0.3s ease;
+            background-color: #993333;
         }
         .ctc-button:hover {
-            background-color: rgb(139, 73, 73);
+            background-color: #8b4949;
+        }
+
+        .bird {
+            position: absolute;
+            top: 20%;
+            left: -100px; 
+            width: 500px;
+            animation: fly 3s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes fly {
+            0% {
+                left: -100px; 
+            }
+            50% {
+                transform: translateY(-20px); 
+            }
+            100% {
+                left: calc(100% + 100px); 
+            }
         }
     </style>
 </head>
 <body>
+    <img src="\images\carte_nasdas.png" alt="Bird" class="bird">
     <div class="container">
         <h1>Bienvenue sur MyBank</h1>
-        <p>Votre Partenaire de confiance pour tous vos besoins bancaires</p>
-        <a href="/users" class="cta-button">Afficher les Utilisateurs</a>
-        <a href="/accounts" class="ctb-button">Afficher les Comptes</a>
-        <a href="/transactions" class="ctc-button">Afficher les Transactions</a>
+        <p>Nasdas nous a fait confiance, pourquoi pas vous ?</p>
+        <a href="/users" class="button cta-button">Afficher les Utilisateurs</a>
+        <a href="/accounts" class="button ctb-button">Afficher les Comptes</a>
+        <a href="/transactions" class="button ctc-button">Afficher les Transactions</a>
     </div>
 </body>
 </html>
